@@ -3,16 +3,20 @@ from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 import cachetools
 from sqlalchemy.orm import Session
+import logging
 
 from models.price_data import PriceData
 from services.price_agent import PriceAgent
-from database import SessionLocal, init_db
+from database import get_db, init_db
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 class PriceService:
     def __init__(self):
         self.cache = cachetools.TTLCache(maxsize=100, ttl=1800)  # 30 minutes cache
         self.agent = PriceAgent()
-        init_db()  # This will drop and recreate the tables
+        init_db()  # This will create the tables if they don't exist
         asyncio.create_task(self._periodic_refresh())
 
     async def _periodic_refresh(self):
@@ -39,7 +43,7 @@ class PriceService:
 
     async def _store_historical_prices(self, prices: List[PriceData]):
         """Store historical price data in the database"""
-        db = SessionLocal()
+        db = next(get_db())
         try:
             for price in prices:
                 # Create a new PriceData instance with the current timestamp
@@ -49,13 +53,14 @@ class PriceService:
                     input_price_per_1m=price.input_price_per_1m,
                     output_price_per_1m=price.output_price_per_1m
                 )
-                print(f"Storing historical price for {new_price.display_name} (normalized: {new_price.normalized_id})")
+                logger.info(f"Storing historical price for {new_price.display_name} (normalized: {new_price.normalized_id})")
                 db.add(new_price)
             db.commit()
-            print("Successfully stored historical prices")
+            logger.info("Successfully stored historical prices")
         except Exception as e:
             db.rollback()
-            print(f"Error storing historical prices: {str(e)}")
+            logger.error(f"Error storing historical prices: {str(e)}")
+            raise
         finally:
             db.close()
 
@@ -82,7 +87,7 @@ class PriceService:
 
     def get_price_history(self, model_name: str, provider: Optional[str] = None, days: int = 30) -> List[dict]:
         """Get historical price data for a specific model, optionally filtered by provider"""
-        db = SessionLocal()
+        db = next(get_db())
         try:
             end_date = datetime.now(timezone.utc)  # Use UTC time
             start_date = end_date - timedelta(days=days)
@@ -102,9 +107,9 @@ class PriceService:
             for current_price in current_prices:
                 provider_name = current_price["provider"]
                 
-                print(f"Searching for historical prices for model: {model_name} from provider: {provider_name}")
-                print(f"Normalized name: {normalized_name}")
-                print(f"Time range: {start_date} to {end_date}")
+                logger.info(f"Searching for historical prices for model: {model_name} from provider: {provider_name}")
+                logger.info(f"Normalized name: {normalized_name}")
+                logger.info(f"Time range: {start_date} to {end_date}")
                 
                 # Query historical prices for this model and provider
                 prices = db.query(PriceData).filter(
@@ -114,7 +119,7 @@ class PriceService:
                     PriceData.timestamp <= end_date
                 ).order_by(PriceData.timestamp).all()
                 
-                print(f"Found {len(prices)} historical prices for {model_name} from {provider_name}")
+                logger.info(f"Found {len(prices)} historical prices for {model_name} from {provider_name}")
                 
                 historical_data.append({
                     "model": model_name,
@@ -132,7 +137,7 @@ class PriceService:
             
             return historical_data
         except Exception as e:
-            print(f"Error fetching price history: {str(e)}")
-            return []
+            logger.error(f"Error fetching price history: {str(e)}")
+            raise
         finally:
             db.close() 

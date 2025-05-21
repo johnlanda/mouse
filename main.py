@@ -1,14 +1,15 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Dict
 from pydantic import BaseModel
 from urllib.parse import unquote
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 
 from services.price_service import PriceService
 from models.price_data import PriceData
-from database import SessionLocal
+from database import SessionLocal, get_db
 
 app = FastAPI(title="AI Model Pricing API")
 
@@ -41,6 +42,12 @@ class ModelInfo(BaseModel):
     display_name: str
     provider: str
     last_updated: datetime
+
+class HealthResponse(BaseModel):
+    status: str
+    version: str
+    database: Dict[str, str]
+    timestamp: datetime
 
 @app.get("/")
 async def root():
@@ -93,4 +100,24 @@ async def get_price_history(model_name: str, provider: Optional[str] = None, day
 async def refresh_prices():
     """Force refresh of all pricing data"""
     await price_service.refresh_prices()
-    return {"message": "Prices refreshed successfully"} 
+    return {"message": "Prices refreshed successfully"}
+
+@app.get("/health", response_model=HealthResponse)
+async def health_check(db: Session = Depends(get_db)):
+    """
+    Health check endpoint for Kubernetes readiness/liveness probes.
+    Checks API and database connectivity.
+    """
+    db_status = "healthy"
+    try:
+        # Test database connection
+        db.execute(text("SELECT 1"))
+    except Exception as e:
+        db_status = f"unhealthy: {str(e)}"
+
+    return HealthResponse(
+        status="healthy",
+        version="1.0.0",  # You might want to make this dynamic based on your app version
+        database={"status": db_status},
+        timestamp=datetime.utcnow()
+    ) 
