@@ -1,0 +1,391 @@
+openapi: 3.0.3
+info:
+  title: AI Model Pricing API
+  description: A FastAPI service that provides up-to-date pricing information for various AI models from different providers
+  version: 1.0.0
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+  - url: https://api.example.com
+    description: Production server
+paths:
+  /:
+    get:
+      summary: Root endpoint
+      description: Simple welcome message
+      operationId: getRoot
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "AI Model Pricing API"
+  
+  /health:
+    get:
+      summary: Health check endpoint
+      description: Health check endpoint for Kubernetes readiness/liveness probes. Checks API and database connectivity.
+      operationId: healthCheck
+      tags:
+        - System
+      responses:
+        '200':
+          description: Health status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+  
+  /models:
+    get:
+      summary: Get all models
+      description: Get all known models with their normalized IDs and display names
+      operationId: getAllModels
+      tags:
+        - Models
+      responses:
+        '200':
+          description: List of all known models
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ModelInfo'
+  
+  /providers:
+    get:
+      summary: Get all providers
+      description: Get all available providers with their model counts and last update times
+      operationId: getAllProviders
+      tags:
+        - Providers
+      responses:
+        '200':
+          description: List of all available providers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProviderInfo'
+  
+  /prices:
+    get:
+      summary: Get all current prices
+      description: Returns current prices for all models from all providers
+      operationId: getAllPrices
+      tags:
+        - Prices
+      responses:
+        '200':
+          description: List of all current prices
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PriceResponse'
+  
+  /prices/{provider}:
+    get:
+      summary: Get prices by provider
+      description: Returns current prices for all models from a specific provider
+      operationId: getPricesByProvider
+      tags:
+        - Prices
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          description: The provider name (e.g., OpenAI, AWS Bedrock)
+          schema:
+            type: string
+            example: OpenAI
+      responses:
+        '200':
+          description: List of prices from the specified provider
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PriceResponse'
+  
+  /prices/model/{model_name}:
+    get:
+      summary: Get prices by model
+      description: Returns current prices for a specific model from all providers. The model name can include spaces and special characters, which will be automatically normalized.
+      operationId: getPriceByModel
+      tags:
+        - Prices
+      parameters:
+        - name: model_name
+          in: path
+          required: true
+          description: The model name (spaces and special characters will be normalized)
+          schema:
+            type: string
+            example: GPT-4 Turbo+
+      responses:
+        '200':
+          description: List of prices for the specified model from all providers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PriceResponse'
+        '404':
+          description: Model not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPException'
+  
+  /prices/history/{model_name}:
+    get:
+      summary: Get price history
+      description: Returns historical price data for a specific model, optionally filtered by provider and time range
+      operationId: getPriceHistory
+      tags:
+        - Prices
+      parameters:
+        - name: model_name
+          in: path
+          required: true
+          description: The model name (URL-encoded if contains special characters)
+          schema:
+            type: string
+            example: GPT-4
+        - name: provider
+          in: query
+          required: false
+          description: Filter results by provider name
+          schema:
+            type: string
+            example: OpenAI
+        - name: days
+          in: query
+          required: false
+          description: Number of days of history to retrieve
+          schema:
+            type: integer
+            default: 30
+            minimum: 1
+            example: 30
+      responses:
+        '200':
+          description: Historical price data for the specified model
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HistoricalPriceResponse'
+  
+  /refresh:
+    post:
+      summary: Force price refresh
+      description: Manually triggers a refresh of all pricing data from all providers
+      operationId: refreshPrices
+      tags:
+        - System
+      responses:
+        '200':
+          description: Prices refreshed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Prices refreshed successfully"
+
+components:
+  schemas:
+    PriceResponse:
+      type: object
+      required:
+        - model
+        - provider
+        - input_price_per_1m
+        - output_price_per_1m
+        - last_updated
+      properties:
+        model:
+          type: string
+          description: Display name of the model
+          example: "GPT-4"
+        provider:
+          type: string
+          description: Name of the provider
+          example: "OpenAI"
+        input_price_per_1m:
+          type: number
+          format: float
+          description: Price per 1 million input tokens
+          example: 30.0
+        output_price_per_1m:
+          type: number
+          format: float
+          description: Price per 1 million output tokens
+          example: 60.0
+        last_updated:
+          type: string
+          format: date-time
+          description: Timestamp of when the price was last updated
+          example: "2024-03-20T12:00:00"
+    
+    ModelInfo:
+      type: object
+      required:
+        - normalized_id
+        - display_name
+        - provider
+        - last_updated
+      properties:
+        normalized_id:
+          type: string
+          description: Normalized model ID (lowercase, spaces replaced with underscores)
+          example: "gpt-4"
+        display_name:
+          type: string
+          description: Original display name of the model
+          example: "GPT-4"
+        provider:
+          type: string
+          description: Name of the provider
+          example: "OpenAI"
+        last_updated:
+          type: string
+          format: date-time
+          description: Timestamp of when the model was last updated
+          example: "2024-03-20T12:00:00"
+    
+    ProviderInfo:
+      type: object
+      required:
+        - name
+        - model_count
+        - last_updated
+      properties:
+        name:
+          type: string
+          description: Name of the provider
+          example: "OpenAI"
+        model_count:
+          type: integer
+          description: Number of models offered by this provider
+          example: 15
+        last_updated:
+          type: string
+          format: date-time
+          description: Timestamp of when any model from this provider was last updated
+          example: "2024-03-20T12:00:00"
+    
+    HistoricalPriceResponse:
+      type: object
+      required:
+        - model
+        - provider
+        - prices
+        - time_range
+      properties:
+        model:
+          type: string
+          description: Display name of the model
+          example: "GPT-4"
+        provider:
+          type: string
+          description: Name of the provider
+          example: "OpenAI"
+        prices:
+          type: array
+          description: Array of historical prices
+          items:
+            type: object
+            properties:
+              input_price_per_1m:
+                type: number
+                format: float
+                description: Price per 1 million input tokens
+                example: 30.0
+              output_price_per_1m:
+                type: number
+                format: float
+                description: Price per 1 million output tokens
+                example: 60.0
+              timestamp:
+                type: string
+                format: date-time
+                description: Timestamp of the price data
+                example: "2024-03-20T12:00:00"
+        time_range:
+          type: object
+          description: Time range of the historical data
+          properties:
+            start:
+              type: string
+              format: date-time
+              description: Start date of the historical data
+              example: "2024-02-20T12:00:00"
+            end:
+              type: string
+              format: date-time
+              description: End date of the historical data
+              example: "2024-03-20T12:00:00"
+    
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - version
+        - database
+        - timestamp
+      properties:
+        status:
+          type: string
+          description: Overall health status
+          example: "healthy"
+        version:
+          type: string
+          description: API version
+          example: "1.0.0"
+        database:
+          type: object
+          description: Database status information
+          properties:
+            status:
+              type: string
+              description: Database connection status
+              example: "healthy"
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp of the health check
+          example: "2024-03-20T12:00:00"
+    
+    HTTPException:
+      type: object
+      properties:
+        detail:
+          type: string
+          description: Error message detail
+          example: "Model not found"
+
+tags:
+  - name: Models
+    description: Operations related to model information
+  - name: Providers
+    description: Operations related to provider information
+  - name: Prices
+    description: Operations related to pricing data
+  - name: System
+    description: System operations and health checks

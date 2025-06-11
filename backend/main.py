@@ -49,6 +49,11 @@ class HealthResponse(BaseModel):
     database: Dict[str, str]
     timestamp: datetime
 
+class ProviderInfo(BaseModel):
+    name: str
+    model_count: int
+    last_updated: datetime
+
 @app.get("/")
 async def root():
     return {"message": "AI Model Pricing API"}
@@ -68,6 +73,27 @@ async def get_all_models():
             "provider": model.provider,
             "last_updated": model.timestamp
         } for model in models]
+    finally:
+        db.close()
+
+@app.get("/providers", response_model=List[ProviderInfo])
+async def get_all_providers():
+    """Get all available providers with their model counts"""
+    db = SessionLocal()
+    try:
+        # Get provider statistics from the database
+        providers_data = db.query(
+            PriceData.provider,
+            text("COUNT(DISTINCT normalized_id) as model_count"),
+            text("MAX(timestamp) as last_updated")
+        ).group_by(PriceData.provider).all()
+        
+        # Convert to ProviderInfo objects
+        return [{
+            "name": provider,
+            "model_count": count,
+            "last_updated": last_updated
+        } for provider, count, last_updated in providers_data]
     finally:
         db.close()
 
