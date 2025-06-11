@@ -1,11 +1,47 @@
-# React + TypeScript + Vite
+# Mouse Frontend - AI Model Pricing Dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A React-based dashboard for tracking AI model pricing across multiple providers.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Real-time pricing data for AI models
+- Historical price charts with trend visualization
+- Dark/Light theme toggle
+- Provider filtering
+- Mock mode for development/demo
+
+## Development
+
+### Running in Mock Mode
+
+You can run the frontend with mock data (no backend required) in two ways:
+
+1. **Using environment variable:**
+   ```bash
+   # Create a .env file
+   cp .env.example .env
+   # Edit .env and set VITE_MOCK_MODE=true
+   npm run dev
+   ```
+
+2. **Using URL parameter:**
+   ```bash
+   npm run dev
+   # Then visit http://localhost:5173?mock=true
+   ```
+
+### Running with Backend
+
+To run with the real backend:
+```bash
+# Make sure the backend is running on http://localhost:8000
+cd ../backend
+python main.py
+
+# Run frontend (with VITE_MOCK_MODE=false or not set)
+cd ../frontend
+npm run dev
+```
 
 ## Expanding the ESLint configuration
 
