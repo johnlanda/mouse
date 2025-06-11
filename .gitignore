@@ -44,6 +44,7 @@ logs/
 .env.development.local
 .env.test.local
 .env.production.local
+.env.sqlite
 
 # Jupyter Notebook
 .ipynb_checkpoints

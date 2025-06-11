@@ -1,6 +1,6 @@
-# AI Model Pricing API
+# AI Model Pricing Dashboard
 
-A FastAPI service that provides up-to-date pricing information for various AI models from different providers.
+A full-stack application with a FastAPI backend and React frontend that provides up-to-date pricing information for various AI models from different providers.
 
 ## Features
 
@@ -9,27 +9,47 @@ A FastAPI service that provides up-to-date pricing information for various AI mo
 - Support for multiple providers offering the same model
 - Normalized model names for consistent lookups
 - RESTful API endpoints
+- React frontend with interactive dashboard
+- Price visualization charts
 
 ## Project Structure
 
 ```
 .
 ├── README.md
-├── requirements.txt
-├── main.py              # FastAPI application entry point
-├── database.py          # Database configuration
-├── models/
-│   └── price_data.py    # SQLAlchemy model for price data
-└── services/
-    ├── price_service.py # Main service for managing prices
-    └── price_agent.py   # AI agent for extracting prices
-```
+├── backend/
+│   ├── requirements.txt
+│   ├── main.py              # FastAPI application entry point
+│   ├── database.py          # Database configuration
+│   ├── openapi.yaml         # OpenAPI specification
+│   ├── Dockerfile
+│   ├── Makefile
+│   ├── models/
+│   │   └── price_data.py    # SQLAlchemy model for price data
+│   ├── services/
+│   │   ├── price_service.py # Main service for managing prices
+│   │   └── price_agent.py   # AI agent for extracting prices
+│   └── k8s/                 # Kubernetes deployment files
+└── frontend/
+    ├── package.json
+    ├── src/
+    │   ├── App.tsx
+    │   ├── components/      # React components
+    │   └── lib/             # Utilities and API client
+    └── public/
 
 ## Installation
 
+### Backend Setup
+
 1. Clone the repository
 
-2. Install and setup Python 3.12 using pyenv:
+2. Navigate to the backend directory:
+```bash
+cd backend
+```
+
+3. Install and setup Python 3.12 using pyenv:
 ```bash
 # Install pyenv if you haven't already
 brew install pyenv
@@ -65,6 +85,18 @@ pip install torch torchvision torchaudio --index-url https://download.pytorch.or
 pip install -r requirements.txt
 ```
 
+### Frontend Setup
+
+1. Navigate to the frontend directory:
+```bash
+cd frontend
+```
+
+2. Install Node.js dependencies:
+```bash
+npm install
+```
+
 Note: The API uses the Mistral-7B-Instruct model for price extraction. Make sure you have sufficient GPU memory available if using CUDA.
 
 ## Development
@@ -82,16 +114,55 @@ To update all dependencies:
 pip install --upgrade -r requirements.txt
 ```
 
-### Running the API
+### Running the Application
 
-Start the API server:
+#### Backend
+
+From the backend directory, start the API server:
+
+For PostgreSQL (default):
 ```bash
+cd backend
 uvicorn main:app --reload
+```
+
+For local development with SQLite in-memory database:
+```bash
+cd backend
+echo "SQLALCHEMY_DATABASE_URL=sqlite:///:memory:" > .env.sqlite
+uvicorn main:app --reload --env-file .env.sqlite
 ```
 
 The API will be available at `http://localhost:8000`
 
+#### Frontend
+
+From the frontend directory, start the React development server:
+```bash
+cd frontend
+npm run dev
+```
+
+The frontend will be available at `http://localhost:5173`
+
 ## API Endpoints
+
+### Get All Providers
+```
+GET /providers
+```
+Returns a list of all available providers with their model counts.
+
+Example response:
+```json
+[
+  {
+    "name": "OpenAI",
+    "model_count": 15,
+    "last_updated": "2024-03-20T12:00:00"
+  }
+]
+```
 
 ### Get All Models
 ```
@@ -254,4 +325,4 @@ This approach makes the system more resilient to website layout changes, as the 
 
 ## Data Storage
 
-The API uses SQLite to store historical price data. The database file is created automatically at `prices.db`.
+The API uses SQLite to store historical price data. The database file is created automatically at `backend/prices.db`.
