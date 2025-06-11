@@ -5,7 +5,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { format } from 'date-fns';
 import { api } from '@/lib/api';
 import type { Provider, Price, HistoricalPrice } from '@/lib/api';
-import { Activity, TrendingUp, DollarSign, RefreshCw } from 'lucide-react';
+import { Activity, TrendingUp, DollarSign, RefreshCw, TrendingDown, TrendingUp as TrendingUpIcon } from 'lucide-react';
 import { ThemeToggle } from './ui/theme-toggle';
 
 interface DashboardProps {
@@ -311,11 +311,39 @@ export function Dashboard({ theme, toggleTheme }: DashboardProps) {
                         <div className="space-y-2">
                           <div className="flex justify-between items-center">
                             <span className="text-sm text-muted-foreground">Input</span>
-                            <span className="font-mono font-medium">${price.input_price_per_1m}</span>
+                            <div className="flex items-center">
+                              <div className="w-20 flex items-center justify-end mr-2">
+                                {price.input_price_change !== undefined && price.input_price_change !== 0 && (
+                                  <div className={`flex items-center gap-1 text-xs ${price.input_price_change < 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                    {price.input_price_change < 0 ? (
+                                      <TrendingDown className="h-3 w-3" />
+                                    ) : (
+                                      <TrendingUpIcon className="h-3 w-3" />
+                                    )}
+                                    <span>{Math.abs(price.input_price_change).toFixed(2)}%</span>
+                                  </div>
+                                )}
+                              </div>
+                              <span className="font-mono font-medium w-16 text-right">${price.input_price_per_1m}</span>
+                            </div>
                           </div>
                           <div className="flex justify-between items-center">
                             <span className="text-sm text-muted-foreground">Output</span>
-                            <span className="font-mono font-medium">${price.output_price_per_1m}</span>
+                            <div className="flex items-center">
+                              <div className="w-20 flex items-center justify-end mr-2">
+                                {price.output_price_change !== undefined && price.output_price_change !== 0 && (
+                                  <div className={`flex items-center gap-1 text-xs ${price.output_price_change < 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                    {price.output_price_change < 0 ? (
+                                      <TrendingDown className="h-3 w-3" />
+                                    ) : (
+                                      <TrendingUpIcon className="h-3 w-3" />
+                                    )}
+                                    <span>{Math.abs(price.output_price_change).toFixed(2)}%</span>
+                                  </div>
+                                )}
+                              </div>
+                              <span className="font-mono font-medium w-16 text-right">${price.output_price_per_1m}</span>
+                            </div>
                           </div>
                           <div className="pt-2 border-t border-border">
                             <p className="text-xs text-muted-foreground">
