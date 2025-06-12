@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { format, subDays } from 'date-fns';
+import { format, subDays, isWithinInterval } from 'date-fns';
+import { DateRange } from 'react-day-picker';
 import { api } from '@/lib/api';
 import type { Provider, Price, HistoricalPrice } from '@/lib/api';
-import { Activity, TrendingUp, DollarSign, RefreshCw, TrendingDown, TrendingUp as TrendingUpIcon, GitCompare } from 'lucide-react';
+import { Activity, TrendingUp, DollarSign, RefreshCw, TrendingDown, TrendingUp as TrendingUpIcon, GitCompare, Calendar } from 'lucide-react';
 import { ThemeToggle } from './ui/theme-toggle';
+import { DateRangePicker } from './ui/date-range-picker';
 import { useNavigate } from 'react-router-dom';
 
 interface DashboardProps {
@@ -24,6 +26,10 @@ export function Dashboard({ theme, toggleTheme }: DashboardProps) {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [priceType, setPriceType] = useState<'input' | 'output'>('input');
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: subDays(new Date(), 30),
+    to: new Date(),
+  });
 
   // Fetch providers on mount
   useEffect(() => {
@@ -113,7 +119,7 @@ export function Dashboard({ theme, toggleTheme }: DashboardProps) {
     }
   };
 
-  // Transform historical data for the chart
+  // Transform historical data for the chart with date filtering
   const getChartData = () => {
     if (historicalData.length === 0) return [];
 
@@ -122,7 +128,16 @@ export function Dashboard({ theme, toggleTheme }: DashboardProps) {
     
     historicalData.forEach(modelData => {
       modelData.prices.forEach(price => {
-        const timestamp = format(new Date(price.timestamp), 'MMM dd');
+        const priceDate = new Date(price.timestamp);
+        
+        // Filter by date range if specified
+        if (dateRange?.from && dateRange?.to) {
+          if (!isWithinInterval(priceDate, { start: dateRange.from, end: dateRange.to })) {
+            return;
+          }
+        }
+        
+        const timestamp = format(priceDate, 'MMM dd');
         if (!pricesByTime[timestamp]) {
           pricesByTime[timestamp] = { date: timestamp };
         }
@@ -225,10 +240,23 @@ export function Dashboard({ theme, toggleTheme }: DashboardProps) {
                           <CardTitle className="text-xl">Price History</CardTitle>
                         </div>
                         <CardDescription className="mt-1">
-                          Last 30 days pricing trends {selectedProvider === 'all' ? 'across all providers' : `for ${selectedProvider}`}
+                          Pricing trends {selectedProvider === 'all' ? 'across all providers' : `for ${selectedProvider}`}
+                          {dateRange?.from && dateRange?.to && (
+                            <span className="ml-2">
+                              ({format(dateRange.from, 'MMM dd')} - {format(dateRange.to, 'MMM dd')})
+                            </span>
+                          )}
                         </CardDescription>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <DateRangePicker
+                            date={dateRange}
+                            onDateChange={setDateRange}
+                            placeholder="Select date range"
+                          />
+                        </div>
                         <Select value={priceType} onValueChange={(value: 'input' | 'output') => setPriceType(value)}>
                           <SelectTrigger className="w-[140px]">
                             <SelectValue />
