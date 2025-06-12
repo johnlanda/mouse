@@ -67,3 +67,78 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Calendar range selection styles */
+.rdp-day_range_start:not(.rdp-day_range_end) {
+  @apply rounded-l-md rounded-r-none;
+}
+
+.rdp-day_range_end:not(.rdp-day_range_start) {
+  @apply rounded-r-md rounded-l-none;
+}
+
+.rdp-day_range_middle {
+  @apply rounded-none bg-accent/50 text-accent-foreground;
+}
+
+.rdp-day_range_start.rdp-day_range_end {
+  @apply rounded-md;
+}
+
+/* Ensure proper styling for selected range */
+.rdp-cell:has(.rdp-day_range_start):not(:has(.rdp-day_range_end)) {
+  @apply bg-gradient-to-r from-primary/20 to-transparent;
+}
+
+.rdp-cell:has(.rdp-day_range_end):not(:has(.rdp-day_range_start)) {
+  @apply bg-gradient-to-l from-primary/20 to-transparent;
+}
+
+.rdp-cell:has(.rdp-day_range_middle) {
+  @apply bg-primary/10;
+}
+
+/* Fix calendar layout and spacing */
+.rdp-months {
+  @apply flex-1;
+}
+
+.rdp-month {
+  @apply space-y-4 w-full;
+}
+
+.rdp-table {
+  @apply w-full border-collapse;
+}
+
+.rdp-head_cell {
+  @apply w-9 text-center font-normal text-[0.8rem] text-muted-foreground;
+}
+
+.rdp-cell {
+  @apply text-center text-sm relative;
+}
+
+/* Today styling */
+.rdp-day_today:not(.rdp-day_selected) {
+  @apply bg-accent text-accent-foreground font-semibold;
+}
+
+/* Hover effects */
+.rdp-day:hover:not(.rdp-day_selected):not(.rdp-day_disabled) {
+  @apply bg-accent text-accent-foreground;
+}
+
+/* Disabled days */
+.rdp-day_disabled {
+  @apply text-muted-foreground opacity-50 cursor-not-allowed;
+}
+
+/* Outside days */
+.rdp-day_outside {
+  @apply text-muted-foreground opacity-50;
+}
+
+.rdp-day_outside.rdp-day_selected {
+  @apply bg-accent/50 text-muted-foreground opacity-30;
+}
