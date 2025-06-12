@@ -130,8 +130,11 @@ export function Dashboard({ theme, toggleTheme }: DashboardProps) {
       modelData.prices.forEach(price => {
         const priceDate = new Date(price.timestamp);
         
-        // Filter by date range if specified
-        if (dateRange?.from && dateRange?.to) {
+        // Only apply date filtering if both dates are set and we're not in mock mode
+        // In mock mode, we want to show data even if it doesn't match the exact date range
+        const isMockMode = import.meta.env.VITE_MOCK_MODE === 'true' || new URLSearchParams(window.location.search).get('mock') === 'true';
+        
+        if (!isMockMode && dateRange?.from && dateRange?.to) {
           if (!isWithinInterval(priceDate, { start: dateRange.from, end: dateRange.to })) {
             return;
           }

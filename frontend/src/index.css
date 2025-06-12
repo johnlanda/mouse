@@ -111,9 +111,16 @@
   @apply w-full border-collapse;
 }
 
-/* Day of week headers - smaller, de-emphasized, properly aligned */
+/* Day of week headers - force override with !important to fix alignment */
 .rdp-head_cell {
-  @apply w-9 h-9 text-center font-normal text-xs text-muted-foreground/70 flex items-center justify-center;
+  @apply w-9 h-9 text-center font-normal text-xs text-muted-foreground/70 flex items-center justify-center !important;
+  width: 2.25rem !important;
+  height: 2.25rem !important;
+  font-size: 0.75rem !important;
+  font-weight: 400 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 .rdp-head_row {
