@@ -67,3 +67,62 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Calendar styles for range selection */
+.rdp-day_range_middle {
+  @apply bg-accent/50 text-accent-foreground rounded-none;
+}
+
+.rdp-day_range_start {
+  @apply bg-primary text-primary-foreground rounded-l-md;
+}
+
+.rdp-day_range_end {
+  @apply bg-primary text-primary-foreground rounded-r-md;
+}
+
+/* Ensure selected days show primary color */
+.rdp-day_selected:not(.rdp-day_range_middle) {
+  @apply bg-primary text-primary-foreground;
+}
+
+/* Fix the day cells container */
+.rdp-cell {
+  @apply relative;
+}
+
+/* Highlight range between selected dates */
+.rdp-cell:has(.rdp-day_range_middle) {
+  @apply bg-accent/50;
+}
+
+.rdp-cell:has(.rdp-day_range_start) {
+  @apply rounded-l-md;
+}
+
+.rdp-cell:has(.rdp-day_range_end) {
+  @apply rounded-r-md;
+}
+
+/* Fix calendar layout */
+.rdp-months {
+  @apply justify-center;
+}
+
+.rdp-month {
+  @apply w-auto;
+}
+
+.rdp-table {
+  @apply w-auto mx-auto;
+}
+
+/* Fix head cell alignment */
+.rdp-head_cell {
+  @apply w-8 text-center font-normal;
+}
+
+/* Ensure proper width for the calendar container */
+.rdp {
+  @apply max-w-sm;
+}

@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { format } from 'date-fns';
+import { format, subDays } from 'date-fns';
 import { api } from '@/lib/api';
 import type { Provider, Price, HistoricalPrice } from '@/lib/api';
-import { Activity, TrendingUp, DollarSign, RefreshCw, TrendingDown, TrendingUp as TrendingUpIcon } from 'lucide-react';
+import { Activity, TrendingUp, DollarSign, RefreshCw, TrendingDown, TrendingUp as TrendingUpIcon, GitCompare } from 'lucide-react';
 import { ThemeToggle } from './ui/theme-toggle';
+import { useNavigate } from 'react-router-dom';
 
 interface DashboardProps {
   theme: 'light' | 'dark';
@@ -14,6 +15,7 @@ interface DashboardProps {
 }
 
 export function Dashboard({ theme, toggleTheme }: DashboardProps) {
+  const navigate = useNavigate();
   const [providers, setProviders] = useState<Provider[]>([]);
   const [selectedProvider, setSelectedProvider] = useState<string>('all');
   const [prices, setPrices] = useState<Price[]>([]);
@@ -226,15 +228,17 @@ export function Dashboard({ theme, toggleTheme }: DashboardProps) {
                           Last 30 days pricing trends {selectedProvider === 'all' ? 'across all providers' : `for ${selectedProvider}`}
                         </CardDescription>
                       </div>
-                      <Select value={priceType} onValueChange={(value: 'input' | 'output') => setPriceType(value)}>
-                        <SelectTrigger className="w-[140px]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="input">Input Price</SelectItem>
-                          <SelectItem value="output">Output Price</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <div className="flex items-center gap-2">
+                        <Select value={priceType} onValueChange={(value: 'input' | 'output') => setPriceType(value)}>
+                          <SelectTrigger className="w-[140px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="input">Input Price</SelectItem>
+                            <SelectItem value="output">Output Price</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent>
@@ -292,13 +296,24 @@ export function Dashboard({ theme, toggleTheme }: DashboardProps) {
             {/* Current Prices Grid */}
             <Card className="border-muted">
               <CardHeader>
-                <div className="flex items-center gap-2">
-                  <DollarSign className="h-5 w-5 text-primary" />
-                  <CardTitle className="text-xl">Current Prices</CardTitle>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="h-5 w-5 text-primary" />
+                      <CardTitle className="text-xl">Current Prices</CardTitle>
+                    </div>
+                    <CardDescription className="mt-1">
+                      Price per 1M tokens {selectedProvider === 'all' ? 'across all providers' : `for ${selectedProvider}`}
+                    </CardDescription>
+                  </div>
+                  <button
+                    onClick={() => navigate('/compare')}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm"
+                  >
+                    <GitCompare className="h-4 w-4" />
+                    Compare Models
+                  </button>
                 </div>
-                <CardDescription>
-                  Price per 1M tokens {selectedProvider === 'all' ? 'across all providers' : `for ${selectedProvider}`}
-                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
