@@ -111,22 +111,6 @@
   @apply w-full border-collapse;
 }
 
-/* Day of week headers - force override with !important to fix alignment */
-.rdp-head_cell {
-  @apply w-9 h-9 text-center font-normal text-xs text-muted-foreground/70 flex items-center justify-center !important;
-  width: 2.25rem !important;
-  height: 2.25rem !important;
-  font-size: 0.75rem !important;
-  font-weight: 400 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-
-.rdp-head_row {
-  @apply flex w-full;
-}
-
 .rdp-cell {
   @apply text-center text-sm relative w-9 h-9 flex items-center justify-center;
 }
@@ -157,4 +141,18 @@
 
 .rdp-day_outside.rdp-day_selected {
   @apply bg-accent/50 text-muted-foreground opacity-30;
+}
+
+/* Navigation arrows - make them more visible */
+.rdp-nav_button {
+  @apply border border-input bg-background hover:bg-accent hover:text-accent-foreground;
+  @apply text-foreground opacity-100 !important;
+}
+
+.rdp-nav_button:hover {
+  @apply opacity-100 !important;
+}
+
+.rdp-nav_button svg {
+  @apply text-foreground;
 }
