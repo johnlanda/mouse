@@ -111,12 +111,21 @@
   @apply w-full border-collapse;
 }
 
+/* Day of week headers - smaller, de-emphasized, properly aligned */
 .rdp-head_cell {
-  @apply w-9 text-center font-normal text-[0.8rem] text-muted-foreground;
+  @apply w-9 h-9 text-center font-normal text-xs text-muted-foreground/70 flex items-center justify-center;
+}
+
+.rdp-head_row {
+  @apply flex w-full;
 }
 
 .rdp-cell {
-  @apply text-center text-sm relative;
+  @apply text-center text-sm relative w-9 h-9 flex items-center justify-center;
+}
+
+.rdp-row {
+  @apply flex w-full;
 }
 
 /* Today styling */
