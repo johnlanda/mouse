@@ -2,7 +2,6 @@ import asyncio
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 import cachetools
-from sqlalchemy.orm import Session
 import logging
 
 from models.price_data import PriceData
