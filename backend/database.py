@@ -28,28 +28,15 @@ logger.info(f"Using database URL: {SQLALCHEMY_DATABASE_URL}")
 
 # Configure engine based on database type
 if SQLALCHEMY_DATABASE_URL.startswith("postgresql"):
-    try:
-        engine = create_engine(
-            SQLALCHEMY_DATABASE_URL,
-            pool_size=5,
-            max_overflow=10,
-            pool_timeout=30,
-            pool_recycle=1800,
-            echo=True  # Enable SQL query logging
-        )
-        # Test the connection
-        with engine.connect() as conn:
-            logger.info("Successfully connected to PostgreSQL database")
-            # Check if we can create tables
-            try:
-                conn.execute(text("SELECT 1"))
-                logger.info("Database connection test successful")
-            except Exception as e:
-                logger.error(f"Database connection test failed: {str(e)}")
-                raise
-    except Exception as e:
-        logger.error(f"Failed to connect to PostgreSQL: {str(e)}")
-        raise
+    engine = create_engine(
+        SQLALCHEMY_DATABASE_URL,
+        pool_size=5,
+        max_overflow=10,
+        pool_timeout=30,
+        pool_recycle=1800,
+        echo=True  # Enable SQL query logging
+    )
+    logger.info("PostgreSQL engine configured")
 else:
     # SQLite configuration
     engine = create_engine(
@@ -64,6 +51,16 @@ def init_db():
     """Initialize the database by creating all tables if they don't exist"""
     try:
         logger.info("Starting database initialization...")
+        # Test the connection first for PostgreSQL
+        if SQLALCHEMY_DATABASE_URL and SQLALCHEMY_DATABASE_URL.startswith("postgresql"):
+            try:
+                with engine.connect() as conn:
+                    conn.execute(text("SELECT 1"))
+                    logger.info("Successfully connected to PostgreSQL database")
+            except Exception as e:
+                logger.error(f"Failed to connect to PostgreSQL: {str(e)}")
+                raise
+        
         # Log the tables that will be created
         for table in Base.metadata.tables:
             logger.info(f"Will create table: {table}")
@@ -74,7 +71,7 @@ def init_db():
         
         # Verify tables were created
         with engine.connect() as conn:
-            if SQLALCHEMY_DATABASE_URL.startswith("postgresql"):
+            if SQLALCHEMY_DATABASE_URL and SQLALCHEMY_DATABASE_URL.startswith("postgresql"):
                 result = conn.execute(text("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'"))
                 tables = [row[0] for row in result]
             else:
@@ -91,4 +88,4 @@ def get_db():
     try:
         yield db
     finally:
-        db.close() 
+        db.close()  

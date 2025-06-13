@@ -9,7 +9,7 @@ from sqlalchemy import text
 
 from services.price_service import PriceService
 from models.price_data import PriceData
-from database import SessionLocal, get_db
+from database import get_db
 
 app = FastAPI(title="AI Model Pricing API")
 
@@ -59,43 +59,35 @@ async def root():
     return {"message": "AI Model Pricing API"}
 
 @app.get("/models", response_model=List[ModelInfo])
-async def get_all_models():
+async def get_all_models(db: Session = Depends(get_db)):
     """Get all known models with their normalized IDs and display names"""
-    db = SessionLocal()
-    try:
-        # Get unique models from the database
-        models = db.query(PriceData.normalized_id, PriceData.display_name, PriceData.provider, PriceData.timestamp).distinct().all()
-        
-        # Convert to ModelInfo objects
-        return [{
-            "normalized_id": model.normalized_id,
-            "display_name": model.display_name,
-            "provider": model.provider,
-            "last_updated": model.timestamp
-        } for model in models]
-    finally:
-        db.close()
+    # Get unique models from the database
+    models = db.query(PriceData.normalized_id, PriceData.display_name, PriceData.provider, PriceData.timestamp).distinct().all()
+    
+    # Convert to ModelInfo objects
+    return [{
+        "normalized_id": model.normalized_id,
+        "display_name": model.display_name,
+        "provider": model.provider,
+        "last_updated": model.timestamp
+    } for model in models]
 
 @app.get("/providers", response_model=List[ProviderInfo])
-async def get_all_providers():
+async def get_all_providers(db: Session = Depends(get_db)):
     """Get all available providers with their model counts"""
-    db = SessionLocal()
-    try:
-        # Get provider statistics from the database
-        providers_data = db.query(
-            PriceData.provider,
-            text("COUNT(DISTINCT normalized_id) as model_count"),
-            text("MAX(timestamp) as last_updated")
-        ).group_by(PriceData.provider).all()
-        
-        # Convert to ProviderInfo objects
-        return [{
-            "name": provider,
-            "model_count": count,
-            "last_updated": last_updated
-        } for provider, count, last_updated in providers_data]
-    finally:
-        db.close()
+    # Get provider statistics from the database
+    providers_data = db.query(
+        PriceData.provider,
+        text("COUNT(DISTINCT normalized_id) as model_count"),
+        text("MAX(timestamp) as last_updated")
+    ).group_by(PriceData.provider).all()
+    
+    # Convert to ProviderInfo objects
+    return [{
+        "name": provider,
+        "model_count": count,
+        "last_updated": last_updated
+    } for provider, count, last_updated in providers_data]
 
 @app.get("/prices", response_model=List[PriceResponse])
 async def get_all_prices():
@@ -120,7 +112,7 @@ async def get_price_history(model_name: str, provider: Optional[str] = None, day
     """Get historical price data for a specific model, optionally filtered by provider"""
     # Decode the URL-encoded model name
     decoded_model_name = unquote(model_name)
-    return price_service.get_price_history(decoded_model_name, provider, days)
+    return price_service.get_price_history(decoded_model_name, provider, days or 30)
 
 @app.post("/refresh")
 async def refresh_prices():
@@ -146,4 +138,4 @@ async def health_check(db: Session = Depends(get_db)):
         version="1.0.0",  # You might want to make this dynamic based on your app version
         database={"status": db_status},
         timestamp=datetime.utcnow()
-    ) 
+    )    

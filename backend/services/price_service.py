@@ -7,6 +7,7 @@ import logging
 from models.price_data import PriceData
 from services.price_agent import PriceAgent
 from database import get_db, init_db
+from utils import normalize_model_name
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -16,7 +17,10 @@ class PriceService:
         self.cache = cachetools.TTLCache(maxsize=100, ttl=1800)  # 30 minutes cache
         self.agent = PriceAgent()
         init_db()  # This will create the tables if they don't exist
-        asyncio.create_task(self._periodic_refresh())
+        try:
+            asyncio.create_task(self._periodic_refresh())
+        except RuntimeError:
+            logger.info("No event loop running, skipping periodic refresh task creation")
 
     async def _periodic_refresh(self):
         while True:
@@ -74,12 +78,12 @@ class PriceService:
     def get_price_by_model(self, model_name: str) -> List[dict]:
         """Get prices for a specific model from all providers"""
         # Normalize the model name by replacing spaces with underscores and handling + characters
-        normalized_name = model_name.lower().strip().replace(' ', '_').replace('+', '_')
+        normalized_name = normalize_model_name(model_name)
         
         # Get all prices from cache that match the normalized model name
         matching_prices = []
         for price in self.cache.values():
-            if price["model"].lower().strip().replace(' ', '_').replace('+', '_') == normalized_name:
+            if normalize_model_name(price["model"]) == normalized_name:
                 matching_prices.append(price)
         
         return matching_prices
@@ -92,7 +96,7 @@ class PriceService:
             start_date = end_date - timedelta(days=days)
             
             # Normalize the model name by replacing spaces with underscores and handling + characters
-            normalized_name = model_name.lower().strip().replace(' ', '_').replace('+', '_')
+            normalized_name = normalize_model_name(model_name)
             
             # Get current prices from cache for this model
             current_prices = self.get_price_by_model(model_name)
@@ -139,4 +143,4 @@ class PriceService:
             logger.error(f"Error fetching price history: {str(e)}")
             raise
         finally:
-            db.close() 
+            db.close()           
