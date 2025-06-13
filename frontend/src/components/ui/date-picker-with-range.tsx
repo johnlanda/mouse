@@ -1,16 +1,15 @@
-import * as React from "react"
 import { format } from "date-fns"
 import { Calendar as CalendarIcon } from "lucide-react"
 import { DateRange } from "react-day-picker"
 
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
+import { cn } from "../../lib/utils"
+import { Button } from "./button"
+import { Calendar } from "./calendar"
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover"
+} from "./popover"
 
 interface DatePickerWithRangeProps {
   date: DateRange | undefined
@@ -23,7 +22,6 @@ export function DatePickerWithRange({
   onDateChange,
   className,
 }: DatePickerWithRangeProps) {
-  const [isSelectingFirstDate, setIsSelectingFirstDate] = React.useState(false)
 
   const handleSelect = (newDate: DateRange | undefined) => {
     if (!newDate) {
@@ -34,7 +32,6 @@ export function DatePickerWithRange({
     // If we're starting fresh or both dates are already set, start a new selection
     if (!date || (date.from && date.to)) {
       onDateChange({ from: newDate.from, to: undefined })
-      setIsSelectingFirstDate(false)
     } else if (date.from && !date.to && newDate.from) {
       // We have a start date but no end date, so set the end date
       if (newDate.from >= date.from) {

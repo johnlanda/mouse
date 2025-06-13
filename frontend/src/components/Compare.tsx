@@ -4,18 +4,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { format, subDays, isWithinInterval } from 'date-fns';
 import { DateRange } from 'react-day-picker';
-import { api } from '@/lib/api';
-import type { Model, Price, HistoricalPrice } from '@/lib/api';
+import { api } from '../lib/api';
+import type { Model, Price, HistoricalPrice, Provider } from '../lib/api';
 import { Check, GitCompare, X, ChevronLeft, TrendingDown, TrendingUp as TrendingUpIcon, Calendar } from 'lucide-react';
 import { DateRangePicker } from './ui/date-range-picker';
 import { useNavigate } from 'react-router-dom';
 
-interface CompareProps {
-  theme: 'light' | 'dark';
-  toggleTheme: () => void;
-}
-
-export function Compare({ theme, toggleTheme }: CompareProps) {
+export function Compare() {
   const navigate = useNavigate();
   const [models, setModels] = useState<Model[]>([]);
   const [prices, setPrices] = useState<Price[]>([]);
@@ -40,7 +35,7 @@ export function Compare({ theme, toggleTheme }: CompareProps) {
         try {
           // First try to get all providers and fetch their prices
           const providers = await api.getProviders();
-          const pricePromises = providers.map(p => api.getPricesByProvider(p.name));
+          const pricePromises = providers.map((p: Provider) => api.getPricesByProvider(p.name));
           const priceResults = await Promise.all(pricePromises);
           pricesData = priceResults.flat();
         } catch (err) {
@@ -95,10 +90,10 @@ export function Compare({ theme, toggleTheme }: CompareProps) {
   const getComparisonChartData = () => {
     if (historicalData.length === 0) return [];
 
-    const pricesByTime: { [key: string]: any } = {};
+    const pricesByTime: { [key: string]: { date: string; [modelName: string]: number | string } } = {};
     
     historicalData.forEach(modelData => {
-      modelData.prices.forEach(price => {
+      modelData.prices.forEach((price: { timestamp: string; input_price_per_1m: number; output_price_per_1m: number }) => {
         const priceDate = new Date(price.timestamp);
         
         // Only apply date filtering if both dates are set and we're not in mock mode
@@ -128,7 +123,6 @@ export function Compare({ theme, toggleTheme }: CompareProps) {
   };
 
   const chartData = getComparisonChartData();
-  const selectedPrices = prices.filter(p => selectedModels.includes(p.model));
 
   return (
     <div className="container mx-auto py-8 px-4 max-w-7xl">
