@@ -6,6 +6,7 @@ from unittest.mock import Mock
 from fastapi.testclient import TestClient
 
 os.environ["SQLALCHEMY_DATABASE_URL"] = "sqlite:///:memory:"
+os.environ["OPENAI_API_KEY"] = "test-api-key-for-testing"
 
 from main import app
 
