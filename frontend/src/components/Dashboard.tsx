@@ -4,8 +4,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { format, subDays, isWithinInterval } from 'date-fns';
 import { DateRange } from 'react-day-picker';
-import { api } from '@/lib/api';
-import type { Provider, Price, HistoricalPrice } from '@/lib/api';
+import { api } from '../lib/api';
+import type { Provider, Price, HistoricalPrice, Model } from '../lib/api';
 import { Activity, TrendingUp, DollarSign, RefreshCw, TrendingDown, TrendingUp as TrendingUpIcon, GitCompare, Calendar } from 'lucide-react';
 import { ThemeToggle } from './ui/theme-toggle';
 import { DateRangePicker } from './ui/date-range-picker';
@@ -60,14 +60,14 @@ export function Dashboard({ theme, toggleTheme }: DashboardProps) {
           const models = await api.getModels();
           
           // Fetch all prices
-          const allPricesPromises = providers.map(provider => 
+          const allPricesPromises = providers.map((provider: Provider) => 
             api.getPricesByProvider(provider.name)
           );
           const allPricesData = await Promise.all(allPricesPromises);
           setPrices(allPricesData.flat());
 
           // Fetch historical data for all models
-          const historicalPromises = models.map(model => 
+          const historicalPromises = models.map((model: Model) => 
             api.getPriceHistory(model.display_name, model.provider, 30)
           );
           
@@ -83,8 +83,8 @@ export function Dashboard({ theme, toggleTheme }: DashboardProps) {
           setPrices(pricesData);
 
           // Fetch historical data for all models from this provider
-          const providerModels = models.filter(m => m.provider === selectedProvider);
-          const historicalPromises = providerModels.map(model => 
+          const providerModels = models.filter((m: Model) => m.provider === selectedProvider);
+          const historicalPromises = providerModels.map((model: Model) => 
             api.getPriceHistory(model.display_name, selectedProvider, 30)
           );
           
@@ -124,10 +124,10 @@ export function Dashboard({ theme, toggleTheme }: DashboardProps) {
     if (historicalData.length === 0) return [];
 
     // Group all prices by timestamp
-    const pricesByTime: { [key: string]: any } = {};
+    const pricesByTime: { [key: string]: { date: string; [modelName: string]: number | string } } = {};
     
     historicalData.forEach(modelData => {
-      modelData.prices.forEach(price => {
+      modelData.prices.forEach((price: { timestamp: string; input_price_per_1m: number; output_price_per_1m: number }) => {
         const priceDate = new Date(price.timestamp);
         
         // Only apply date filtering if both dates are set and we're not in mock mode
